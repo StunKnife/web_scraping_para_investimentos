@@ -33,7 +33,7 @@ url_tables <- url_html %>% html_table(fill = TRUE)
 #extract relevant table
 
 fundos_imobiliarios <- url_tables[[1]]
-#str(fundos_imobiliarios)
+str(fundos_imobiliarios)
 
 #extract relevant columns
 
@@ -47,7 +47,8 @@ fundos_imobiliarios %>%
 #View(fundos_imobiliarios)
 
 a=as.data.frame(fundos_imobiliarios)
-#str(a)
+str(a)
+
 cx=a
 
 ####-------------------####
@@ -57,7 +58,7 @@ cx=a
 ####Transformando classe dos dados
 
 base_bruta1=cx|>mutate(preco_atual=str_sub(preco_atual,4,10))|>  
-  mutate(preco_atual=str_replace(preco_atual,",","."))|>
+mutate(preco_atual=str_replace(preco_atual,",","."))|>
   mutate(dividendo=str_replace(preco_atual,",","."))|>
   mutate(dividend_yield=str_replace(dividend_yield,"%",""))|>
   mutate(dividend_yield=str_replace(dividend_yield,",","."))|>
@@ -94,10 +95,10 @@ base_bruta1=cx|>mutate(preco_atual=str_sub(preco_atual,4,10))|>
   mutate(rentab_acumulada=str_replace(rentab_acumulada,",","."))
 
 # SEGUNDA ETAPA
-#str(base_bruta1)
-
+  str(base_bruta1)
+  
 base_bruta=base_bruta1|>
-  mutate(vpa=str_sub(vpa,4,10))|>
+    mutate(vpa=str_sub(vpa,4,10))|>
   mutate(vpa=str_replace(vpa,",","."))|>
   
   mutate(p_vpa=str_replace(p_vpa,",","."))|>
@@ -120,14 +121,9 @@ base_bruta=base_bruta1|>
   mutate(vacancia_financeira=str_replace(vacancia_financeira,"%",""))|>
   mutate(vacancia_financeira=str_replace(vacancia_financeira,",","."))
 
-#str(base_bruta)
+str(base_bruta)
 
 ####Transformando em numérico
-
-iu=which(base_bruta$vpa=="N/A")
-
-base_bruta=base_bruta[-iu,]
-
 
 base_ffis=base_bruta|>mutate(preco_atual=as.numeric(preco_atual))|>
   mutate(liquidez_diaria=as.numeric(liquidez_diaria))|>
@@ -151,20 +147,37 @@ base_ffis=base_bruta|>mutate(preco_atual=as.numeric(preco_atual))|>
   mutate(vacancia_fisica=as.numeric(vacancia_fisica))|>
   mutate(vacancia_financeira=as.numeric(vacancia_financeira))|>
   mutate(quantidade_ativos=as.numeric(quantidade_ativos))
-
-iu=which(base_ffis$p_vpa=="N/A")
-
-base_ffis=base_ffis[-iu,]
-
+  
 #https://cdr.ibpad.com.br/dados-em-strings-texto.html
 base_ffis=base_ffis|>mutate(patrimonio_liq=str_replace_all(patrimonio_liq,"\\.",""))|>
   mutate(patrimonio_liq=str_sub(patrimonio_liq,4,10))|> 
   mutate(patrimonio_liq=as.numeric(patrimonio_liq))|>
   mutate(p_vpa=as.numeric(p_vpa))
 
-##### ##### #####   
+
+  ##### ##### #####   
 ##### ESTRATÉGIA#####  
-##### ##### #####  
+  ##### ##### #####  
+   
+  #PRIORIDADE
+#FILTRAR OS FIIS MAIS BARATOS: PONTO DE CORTE, ACIMA DE V_VAP>1
+#FILRAR OS FIIS COM MAIORES DIVIDENDOS  
+#realizar uma filtragem por categoria  
+
+#  table(base_ffis$setor)
+  
+#base_ffis|>filter(p_vpa>=1.00 | dividend_yield>0.5) |>filter(setor=="Logística")
+#base_ffis|>filter(p_vpa>=1.00 | dividend_yield>0.5) |>filter(setor=="Híbrido")
+#base_ffis|>filter(p_vpa>=1.00 | dividend_yield>0.5) |>filter(setor=="Hospital")
+#base_ffis|>filter(p_vpa>=1.00 | dividend_yield>0.5) |>filter(setor=="Hotel")
+#base_ffis|>filter(p_vpa>=1.00 | dividend_yield>0.5) |>filter(setor=="Lajes Corporativas")
+#base_ffis|>filter(p_vpa>=1.00 | dividend_yield>0.5) |>filter(setor=="Outros")
+#base_ffis|>filter(p_vpa>=1.00 | dividend_yield>0.5) |>filter(setor=="Residencial")
+#base_ffis|>filter(p_vpa>=1.00 | dividend_yield>0.5) |>filter(setor=="Shoppings")
+#base_ffis|>filter(p_vpa>=1.00 | dividend_yield>0.5) |>filter(setor=="Títulos e Val. Mob.")
+
+#Filtro global
+#str(base_ffis)
 
 #Renomenado
 
@@ -188,6 +201,21 @@ df_ffis <- rename(base_ffis,dividend_yield_percent=dividend_yield,
 
 df_ffis=df_ffis|>mutate(diff_med_med_yd=dy_12m_media_percent-dividend_yield_percent)
 
-write_csv(df_ffis,paste0('data/',Sys.Date(),'rank','.csv'))
+#str(df_ffis)
+
+rank=df_ffis|>filter(p_vpa<=0.85)|>filter(dividend_yield_percent>0.65)|>filter(liquidez_diaria>4000)|>
+  filter(abs(diff_med_med_yd)<abs(0.3))|>filter(vacancia_fisica_percent<30)
+ 
+
+
+#View(rank)
+
+
+rank=as.data.frame(rank)
+
+rank=rank[order(rank$p_vpa),]
+
+
+write_csv(rank,paste0('data/',Sys.Date(),'rank','.csv'))
 #write_xlsx(rank,"rank.xlsx")
 
