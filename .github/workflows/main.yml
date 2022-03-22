@@ -4,7 +4,7 @@ name: fiiscraping
 # Controls when the action will run.
 on:
   schedule:
-    - cron:  '40 14 * * *'
+    - cron:  '30 19 * * *'  #-3 hrs para o usuário aqui (jp)
 
 
 jobs: 
