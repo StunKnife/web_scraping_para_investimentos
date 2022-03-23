@@ -6,7 +6,7 @@ on:
   #schedule:
    # - cron:  '30 19 * * *'  #-3 hrs para o usuário aqui (jp)
   push: # executa automaticamente
-    branches: [ main ] 
+    branches: [ main ] #
 
 
 jobs: 
